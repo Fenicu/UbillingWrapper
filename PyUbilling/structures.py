@@ -1,6 +1,5 @@
-from typing import Optional, Union, List
-from six import iteritems, text_type
 import datetime
+from typing import Union
 
 
 class user_w_auto(dict):
@@ -14,7 +13,7 @@ class user_w_auto(dict):
     mobile: str
     email: Union[str, None]
     credit: str
-    creditexpire: Union[datetime.datetime,str]
+    creditexpire: Union[datetime.datetime, str]
     payid: int
     contract: str
     tariff: str
@@ -30,6 +29,7 @@ class user_w_auto(dict):
     def __init__(self, *args, **kwargs):
         super(user_w_auto, self).__init__(*args, **kwargs)
         self.__dict__ = self
+
 
 class user_payment(dict):
 
@@ -53,6 +53,7 @@ class user_announcement(dict):
         super(user_announcement, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
+
 class user_tickets(dict):
 
     _id: int
@@ -66,6 +67,7 @@ class user_tickets(dict):
     def __init__(self, *args, **kwargs):
         super(user_tickets, self).__init__(*args, **kwargs)
         self.__dict__ = self
+
 
 class user_paument_systems(dict):
 
