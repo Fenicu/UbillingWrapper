@@ -5,31 +5,21 @@ import xml.etree.ElementTree as xml
 from typing import List, Optional, Union
 from urllib.parse import urlparse, urlunparse
 
+from loguru import logger
+from sys import stdout
+
 import aiohttp
 
-from .structures import (user_announcement, user_paument_systems, user_payment,
+from structures import (user_announcement, user_paument_systems, user_payment,
                          user_tickets, user_w_auto)
-
-'''
-TO DO
-1. XML Agent оключен конфигурацией
-2. Вместо JSON возвращать кастомный словарик
-3. Если ответ пустой, вернуть None
-4. Убрать try/catch (альтернативно другие рейзить)
-5. Для каждого вывода отдельный тип
-6. s:List[Custom1] return s
-7. Даты в datetime
-
-8. Сделать функцию для запросов
-9. проверять статус код
-'''
-
 
 class BillClass():
 
-    # Уточнить как приходит ссылка (с http или без)
     def __init__(self, api_link,
                  loop: Optional[Union[asyncio.BaseEventLoop, asyncio.AbstractEventLoop]] = None):
+
+        logger.add(stdout, colorize=True, format="<green>{time:DD.MM.YY H:mm:ss}</green> "
+                "| <yellow><b>{level}</b></yellow> | <magenta>{file}</magenta> | <cyan>{message}</cyan>")
 
         if api_link:
             self._main_loop = loop
@@ -57,19 +47,9 @@ class BillClass():
     async def close(self):
         await self._session.close()
 
-    @staticmethod
-    def json_to_dict(load):
-        dict_answer = {}
-        for i in load:
-            for j in i:
-                dict_answer[j] = i[j]
-        return dict_answer
-
     async def get_response(self, query):
         loc_session = self.session()
         link = urlunparse(self.o._replace(query=query))
-
-        print(link)
 
         async with loc_session.get(link) as resp:
 
@@ -78,6 +58,7 @@ class BillClass():
                 await self.close()
                 raise RuntimeError(msg)
 
+            logger.success(link) # я просто ссылку логирую
             answer = await resp.read()
 
         await self.close()
@@ -91,8 +72,9 @@ class BillClass():
             answer = await self.get_response(query)
 
             try:
-                answer = user_w_auto(self.json_to_dict(json.loads(answer)))
-            except json.decoder.JSONDecodeError:        # Если вернулся XML вместо JSON
+                answer = user_w_auto(json.loads(answer))
+
+            except json.decoder.JSONDecodeError:
                 answer = xml.fromstring(answer)
 
                 tmp_dict = {}
@@ -103,6 +85,7 @@ class BillClass():
 
                 answer = user_w_auto(tmp_dict)
 
+            if answer == {}: answer = None
             return answer
 
         else:
@@ -114,8 +97,8 @@ class BillClass():
 
             s: List[user_payment] = []
 
-            # query = f'xmlagent=true&payments=true&json=true&uberlogin={user.login}&uberpassword={user.password}'
-            query = 'xmlagent=true&payments=true&json=true'   # debug row
+            query = f'xmlagent=true&payments=true&json=true&uberlogin={user.login}&uberpassword={user.password}'
+            #query = 'xmlagent=true&payments=true&json=true'   # debug 
             answer = await self.get_response(query)
 
             try:
@@ -123,34 +106,32 @@ class BillClass():
             except json.decoder.JSONDecodeError:
                 answer = xml.fromstring(answer)
 
-                tmp_ans = {}
-                rand_index = 0
+                tmp_ans = []
 
                 for table in answer.iter('payment'):
                     temp_dict = {}
                     for row in table:
                         temp_dict[row.tag] = row.text
-                    tmp_ans[rand_index] = temp_dict
-                    rand_index += 1
+                    tmp_ans.append(temp_dict)
                 answer = tmp_ans
 
-            for i in answer:
-                answer[i]['date'] = datetime.datetime.strptime(answer[i]['date'], '%Y-%m-%d %H:%M:%S')
-                s.append(user_payment(answer[i]))
+            for row in answer:
+                row['date'] = datetime.datetime.strptime(row['date'], '%Y-%m-%d %H:%M:%S')
+                s.append(user_payment(row))
+
+            if s == []: s = None
             return s
 
         else:
             raise ValueError('Login and password should not be NONE')
 
-    # я не уверен, как оно будет работать с несколькокими объявлениями. надо протестировать
     async def get_user_announcement(self, user) -> List[user_payment]:
 
         if user.login and user.password:
 
             s: List[user_payment] = []
 
-            # query = f'xmlagent=true&announcements=true&json=true&uberlogin={user.login}&uberpassword={user.password}'
-            query = 'xmlagent=true&announcements=true&json=true'  # debug
+            query = f'xmlagent=true&announcements=true&json=true&uberlogin={user.login}&uberpassword={user.password}'
             answer = await self.get_response(query)
 
             try:
@@ -169,20 +150,21 @@ class BillClass():
                         temp_dict['title'] = row.attrib['title']
                     s.append(user_announcement(temp_dict))
 
+            if s == []: s = None
             return s
 
         else:
             raise ValueError('Login and password should not be NONE')
 
-    # не тестировалось. сайт отправляет не ту страницу + json пока что не работает
     async def get_user_tickets(self, user) -> List[user_tickets]:
 
         if user.login and user.password:
 
             s: List[user_tickets] = []
 
-            # query = f'xmlagent=true&tickets=true&json=true&uberlogin={user.login}&uberpassword={user.password}'
-            query = 'xmlagent=true&tickets=true&json=true'  # debug
+            query = f'xmlagent=true&tickets=true&json=true&uberlogin={user.login}&uberpassword={user.password}'
+            #query = 'xmlagent=true&tickets=true&json=true'  # debug
+
             answer = await self.get_response(query)
 
             try:
@@ -190,20 +172,20 @@ class BillClass():
 
             except json.decoder.JSONDecodeError:
                 answer = xml.fromstring(answer)
-                temp_ans = {}
-                index = 0
+                temp_ans = []
+
                 for table in answer.iter('ticket'):
                     temp_dict = {}
                     for row in table:
                         temp_dict[row.tag] = row.text
-                    temp_ans[index] = user_tickets(temp_dict)
-                    index += 1
+                    temp_ans.append(user_tickets(temp_dict))
                 answer = temp_ans
 
-            for i in answer:
-                answer[i]['date'] = datetime.datetime.strptime(answer[i]['date'], '%Y-%m-%d %H:%M:%S')
-                s.append(user_payment(answer[i]))
+            for row in answer:
+                row['date'] = datetime.datetime.strptime(row['date'], '%Y-%m-%d %H:%M:%S')
+                s.append(user_payment(row))
 
+            if s == []: s = None
             return s
 
         else:
@@ -222,21 +204,19 @@ class BillClass():
                 answer = json.loads(answer)
             except json.decoder.JSONDecodeError:
                 answer = xml.fromstring(answer)
-                tmp_ans = {}
-                index = 0
+                tmp_ans = []
 
                 for table in answer.iter('paysys'):
-
                     tmp_dict = {}
                     for row in table:
                         tmp_dict[row.tag] = row.text
-                    tmp_ans[index] = tmp_dict
-                    index += 1
+                    tmp_ans.append(tmp_dict)
                 answer = tmp_ans
 
-            for i in answer:
-                s.append(user_paument_systems(answer[i]))
+            for row in answer:
+                s.append(user_paument_systems(row))
 
+            if s == []: s = None
             return s
 
         else:
@@ -277,9 +257,11 @@ async def main():
     # B = BillClass('billing-new.nemicom.ua')
     # B = BillClass('https://customer.nemicom.ua')
 
-    ans = await B.get_user_paument_systems(U)
-    for i in ans:
-        print(i)
+    ans = await B.get_user_tickets(U)
+    print(ans)
+    #for i in ans:
+        #print(f'{i} {ans[i]}')
+        #print(i)
 
 
 if __name__ == "__main__":
