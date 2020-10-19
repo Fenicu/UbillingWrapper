@@ -10,7 +10,7 @@ from sys import stdout
 
 import aiohttp
 
-from structures import (user_announcement, user_paument_systems, user_payment,
+from .structures import (user_announcement, user_paument_systems, user_payment,
                          user_tickets, user_w_auto)
 
 class BillClass():
@@ -221,48 +221,3 @@ class BillClass():
 
         else:
             raise ValueError('Login and password should not be NONE')
-
-
-class UserType(dict):
-    """
-    Объект пользователя
-    """
-
-    _id: int
-    name: str
-    username: Union[str, None]
-    whence: str
-    ban: bool
-    language: str
-    reg_date: datetime.datetime
-    last_online: datetime.datetime
-    login: str
-    password: str
-
-    def __init__(self, *args, **kwargs):
-        super(UserType, self).__init__(*args, **kwargs)
-        self.__dict__ = self
-
-
-async def main():
-    U = UserType({
-        '_id': 1,
-        'name': 'John',
-        'username': 'JJJ',
-        'login': 'gen_xmz0jd4420',
-        'password': 'ffc13089697dd145be565f0ad593569d'})
-    # U = UserType({'_id':1,'name':'fenicu','username':'lolipop','login':'nemmolod30aprouter','password':'925738ee341df2b859794b4237f8a015'})
-
-    B = BillClass('http://demo.ubilling.net.ua:9999/billing/userstats/')
-    # B = BillClass('billing-new.nemicom.ua')
-    # B = BillClass('https://customer.nemicom.ua')
-
-    ans = await B.get_user_tickets(U)
-    print(ans)
-    #for i in ans:
-        #print(f'{i} {ans[i]}')
-        #print(i)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
