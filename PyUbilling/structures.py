@@ -6,7 +6,7 @@ class user_w_auto(dict):
 
     address: str
     realname: str
-    login: Union[str, None]
+    bil_login: Union[str, None]
     cash: int
     ip: str
     phone: str
@@ -22,13 +22,15 @@ class user_w_auto(dict):
     traffupload: str
     trafftotal: str
     accountstate: str
-    accountexpire: int
+    accountexpire: Union[int, str]
     currency: str
     version: str
 
     def __init__(self, *args, **kwargs):
         super(user_w_auto, self).__init__(*args, **kwargs)
         self.__dict__ = self
+        self.bil_login = self.login
+        del self["login"]
 
 
 class user_payment(dict):
@@ -45,7 +47,7 @@ class user_payment(dict):
 # Посмотреть как оно будет выглядеть в json
 class user_announcement(dict):
 
-    message: str
+    text: str
     unic: str
     title: str
 
@@ -73,8 +75,18 @@ class user_paument_systems(dict):
 
     name: str
     url: str
-    dascription: str
+    description: str
 
     def __init__(self, *args, **kwargs):
         super(user_paument_systems, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
+class user_credit(dict):
+
+    status: int
+    message: str
+
+    def __init__(self, *args, **kwargs):
+        super(user_credit, self).__init__(*args, **kwargs)
         self.__dict__ = self
