@@ -178,7 +178,7 @@ class FreezeData(BaseModel):
 
     result: str = ""
     message: str = ""
-    freeze_self_available: str | None = Field(
+    freeze_self_available: bool | None = Field(
         default=None, validation_alias="freezeSelfAvailable"
     )
     activation_cost: str | None = Field(
@@ -187,10 +187,10 @@ class FreezeData(BaseModel):
     tariffs_allowed_list: str | None = Field(
         default=None, validation_alias="tariffsAllowedList"
     )
-    tariff_allowed_any: str | None = Field(
+    tariff_allowed_any: bool | None = Field(
         default=None, validation_alias="tariffAllowedAny"
     )
-    negative_balance_freeze_allowed: str | None = Field(
+    negative_balance_freeze_allowed: bool | None = Field(
         default=None, validation_alias="negativeBalanceFreezeAllowed"
     )
     user_balance: str | None = Field(default=None, validation_alias="userBalance")
@@ -201,7 +201,7 @@ class FreezeData(BaseModel):
     freeze_status: str | None = Field(default=None, validation_alias="freezeStatus")
     date_from: str | None = Field(default=None, validation_alias="dateFrom")
     date_to: str | None = Field(default=None, validation_alias="dateTo")
-    freeze_days_charge_active: str | None = Field(
+    freeze_days_charge_active: bool | None = Field(
         default=None, validation_alias="freezeDaysChargeActive"
     )
     freeze_days_total: str | None = Field(
