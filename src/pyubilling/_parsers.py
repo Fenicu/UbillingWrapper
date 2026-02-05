@@ -1,9 +1,12 @@
 import json
+import logging
 import xml.etree.ElementTree as ET
 
 from pydantic import BaseModel
 
 from pyubilling.exceptions import UbillingParseError
+
+_logger = logging.getLogger(__name__)
 
 
 def _parse_json(raw: bytes) -> dict | list:
@@ -40,7 +43,11 @@ def parse_single[T: BaseModel](raw: bytes, model: type[T], *, root_tag: str) -> 
     try:
         data = _parse_json(raw)
     except (json.JSONDecodeError, ValueError):
-        data = _parse_xml_single(raw, root_tag)
+        try:
+            data = _parse_xml_single(raw, root_tag)
+        except ET.ParseError as exc:
+            _logger.error("XML parse error: %s, raw response: %r", exc, raw[:500])
+            raise UbillingParseError(f"Invalid XML: {exc}") from exc
 
     if not data:
         return None
@@ -56,7 +63,11 @@ def parse_list[T: BaseModel](raw: bytes, model: type[T], *, root_tag: str) -> li
     try:
         data = _parse_json(raw)
     except (json.JSONDecodeError, ValueError):
-        data = _parse_xml_list(raw, root_tag)
+        try:
+            data = _parse_xml_list(raw, root_tag)
+        except ET.ParseError as exc:
+            _logger.error("XML parse error: %s, raw response: %r", exc, raw[:500])
+            raise UbillingParseError(f"Invalid XML: {exc}") from exc
 
     if not data:
         return []
