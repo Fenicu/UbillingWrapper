@@ -66,7 +66,7 @@ class Ticket(BaseModel):
     from_user: str = Field(
         default="", validation_alias=AliasChoices("from", "_from")
     )
-    to: str = ""
+    to: str | None = None
     reply_id: int | None = Field(default=None, validation_alias="replyid")
     status: int = 0
     text: str = ""
