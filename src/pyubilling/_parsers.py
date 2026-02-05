@@ -52,6 +52,11 @@ def parse_single[T: BaseModel](raw: bytes, model: type[T], *, root_tag: str) -> 
     if not data:
         return None
 
+    if isinstance(data, list):
+        data = data[0] if data else None
+        if not data:
+            return None
+
     try:
         return model.model_validate(data)
     except Exception as exc:
